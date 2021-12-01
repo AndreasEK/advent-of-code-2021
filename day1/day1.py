@@ -2,17 +2,17 @@
 import unittest
 
 def sweep(file):
-    sonar_input_file = open('./' + file, 'r')
-    lines_as_text = sonar_input_file.readlines()
-    return [int(single_measurement) for single_measurement in lines_as_text]
+    sonar_sweep_report = open('./' + file, 'r')
+    measurements = sonar_sweep_report.readlines()
+    return [int(single_measurement) for single_measurement in measurements]
 
-def compare_two_depths(two_measures):
+def is_deeper(two_measures):
     return two_measures[1] > two_measures[0]
 
 def count_deeper_measures(sonar_measures):
     count = 0
     for i in pairs(sonar_measures):
-        if (compare_two_depths(i)):
+        if (is_deeper(i)):
             count+=1
     return count
 
@@ -42,15 +42,15 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual([199, 200, 208, 210, 200, 207, 240, 269, 260, 263], sonar_measures)
 
     def test_detect_deeper_measures(self):
-        does_get_deeper = compare_two_depths((1, 2))
+        does_get_deeper = is_deeper((1, 2))
         self.assertEqual(True, does_get_deeper)
 
     def test_detect_shallower_measures(self):
-        does_get_deeper = compare_two_depths((2, 1))
+        does_get_deeper = is_deeper((2, 1))
         self.assertEqual(False, does_get_deeper)
 
     def test_detect_equal_measures(self):
-        does_get_deeper = compare_two_depths((2, 2))
+        does_get_deeper = is_deeper((2, 2))
         self.assertEqual(False, does_get_deeper)
 
     def test_count_deeper_measures(self):
