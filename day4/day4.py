@@ -25,24 +25,22 @@ class BingoSubsystem(object):
                     self.last_called_number = int(drawn_number)
                     return board
 
-    def score(self, b=None):
-        if b is None:
-            b = self.first_winning_board()
-        return self.last_called_number * b.unmarked_sum()
-
     def last_winning_board(self):
         boards = [x for x in self.boards]
         while len(boards) > 1:
-            drawn_number = self.random_numbers.pop(0)
+            called_number = self.call_next_number()
             for board in boards:
-                board.mark(drawn_number)
+                board.mark(called_number)
             boards = list(filter(lambda b: not b.wins(), boards))
         last_winning_board = boards.pop()
         while not last_winning_board.wins():
-            drawn_number = self.random_numbers.pop(0)
-            last_winning_board.mark(drawn_number)
-        self.last_called_number = int(drawn_number)
+            called_number = self.call_next_number()
+            last_winning_board.mark(called_number)
+        self.last_called_number = int(called_number)
         return last_winning_board
+
+    def call_next_number(self):
+        return self.random_numbers.pop(0)
 
 
 class Board(object):
@@ -50,7 +48,11 @@ class Board(object):
         self.numbers = initial_board.split()
         self.size = int(math.sqrt(len(self.numbers)))
 
+    def __str__(self):
+        return str(self.rows())
+
     def mark(self, marked_number):
+        self.last_marked_number = marked_number
         self.numbers = ['X' if current_number == marked_number else current_number for current_number in self.numbers]
 
     def mark_all(self, marked_numbers):
@@ -78,6 +80,9 @@ class Board(object):
     def unmarked_sum(self):
         return sum(number for number in map(lambda x: int(x), filter(lambda x: x != 'X', self.numbers)))
 
+    def score(self):
+        return self.unmarked_sum() * int(self.last_marked_number)
+
 
 class Day4Test(unittest.TestCase):
 
@@ -92,6 +97,10 @@ class Day4Test(unittest.TestCase):
 
     def test_initial_board_dimensions(self):
         self.assertEqual(5, self.board.size)
+
+    def test_last_marked_number(self):
+        self.board.mark('1')
+        self.assertEqual('1', self.board.last_marked_number)
 
     def test_marked_numbers(self):
         self.board.mark_all(['1', '2', '3', '4'])
@@ -149,7 +158,8 @@ class Day4Test(unittest.TestCase):
         self.assertEqual(188, b.unmarked_sum())
 
     def test_score_of_winning_board(self):
-        self.assertEqual(4512, self.bingoSubsystem.score(None))
+        b = self.bingoSubsystem.first_winning_board()
+        self.assertEqual(4512, b.score())
 
     def test_game_last_winning_board(self):
         b = self.bingoSubsystem.last_winning_board()
@@ -161,15 +171,16 @@ class Day4Test(unittest.TestCase):
 
     def test_score_of_last_winning_board(self):
         b = self.bingoSubsystem.last_winning_board()
-        self.assertEqual(1924, self.bingoSubsystem.score(b))
+        self.assertEqual(1924, b.score())
 
 
 if __name__ == '__main__':
     print("Advent of Code – Day 4: Play Bingo")
     with open('bingo') as fp:
         bingoSubsystem = BingoSubsystem(fp)
-        print(f"The score of the winning board is {bingoSubsystem.score()}")
-        print(bingoSubsystem.first_winning_board().numbers)
-        last = bingoSubsystem.last_winning_board()
-        print(f"The score of the last winning board is {bingoSubsystem.score(last)}")
-        print(last.numbers)
+        first_winning_board = bingoSubsystem.first_winning_board()
+        last_winning_board = bingoSubsystem.last_winning_board()
+        print(f"The score of the winning board is {first_winning_board.score()}")
+        print(first_winning_board)
+        print(f"The score of the last winning board is {last_winning_board.score()}")
+        print(last_winning_board)
