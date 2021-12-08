@@ -7,7 +7,7 @@ class BingoSubsystem(object):
 
     def __init__(self, init):
         for line in iter(init.readline, '\n'):
-            self.drawn_numbers = line.strip().split(',')
+            self.random_numbers = line.strip().split(',')
         self.boards = list(iter(lambda: self.read_board(init), ''))
 
     @staticmethod
@@ -18,42 +18,37 @@ class BingoSubsystem(object):
         return '' if board == "" else Board(board)
 
     def first_winning_board(self):
-        for drawn_number in self.drawn_numbers:
-            self.last_called_number = int(drawn_number)
+        for drawn_number in self.random_numbers:
             for board in self.boards:
                 board.mark(drawn_number)
                 if board.wins():
+                    self.last_called_number = int(drawn_number)
                     return board
 
     def score(self, b=None):
         if b is None:
             b = self.first_winning_board()
-        return self.last_called_number * b.unmarkedSum()
+        return self.last_called_number * b.unmarked_sum()
 
-    # TODO - this needs to be refactored!
     def last_winning_board(self):
-        for drawn_number in self.drawn_numbers:
-            self.last_called_number = int(drawn_number)
-            boards_that_won = 0
-            for board in self.boards:
+        boards = [x for x in self.boards]
+        while len(boards) > 1:
+            drawn_number = self.random_numbers.pop(0)
+            for board in boards:
                 board.mark(drawn_number)
-                if board.wins():
-                    boards_that_won += 1
-            if boards_that_won == len(self.boards) - 1:
-                for board in self.boards:
-                    if not board.wins():
-                        for drawn_number2 in self.drawn_numbers:
-                            self.last_called_number = int(drawn_number2)
-                            board.mark(drawn_number2)
-                            if board.wins():
-                                return board
+            boards = list(filter(lambda b: not b.wins(), boards))
+        last_winning_board = boards.pop()
+        while not last_winning_board.wins():
+            drawn_number = self.random_numbers.pop(0)
+            last_winning_board.mark(drawn_number)
+        self.last_called_number = int(drawn_number)
+        return last_winning_board
 
 
 class Board(object):
     def __init__(self, initial_board):
         self.numbers = initial_board.split()
         self.size = int(math.sqrt(len(self.numbers)))
-        pass
 
     def mark(self, marked_number):
         self.numbers = ['X' if current_number == marked_number else current_number for current_number in self.numbers]
@@ -80,11 +75,8 @@ class Board(object):
     def cols(self):
         return [self.col(index) for index in range(self.size)]
 
-    def unmarkedSum(self):
-        sum = 0
-        for number in self.numbers:
-            sum += 0 if number == 'X' else int(number)
-        return sum
+    def unmarked_sum(self):
+        return sum(number for number in map(lambda x: int(x), filter(lambda x: x != 'X', self.numbers)))
 
 
 class Day4Test(unittest.TestCase):
@@ -132,7 +124,7 @@ class Day4Test(unittest.TestCase):
 
     def test_game_setup_drawn_numbers(self):
         self.assertEqual("7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1".split(','),
-                         self.bingoSubsystem.drawn_numbers)
+                         self.bingoSubsystem.random_numbers)
 
     def test_game_setup_boards(self):
         self.assertEqual(3, len(self.bingoSubsystem.boards))
@@ -154,7 +146,7 @@ class Day4Test(unittest.TestCase):
 
     def test_sum_of_unmarked(self):
         b = self.bingoSubsystem.first_winning_board()
-        self.assertEqual(188, b.unmarkedSum())
+        self.assertEqual(188, b.unmarked_sum())
 
     def test_score_of_winning_board(self):
         self.assertEqual(4512, self.bingoSubsystem.score(None))
