@@ -63,10 +63,7 @@ class Board(object):
             self.mark(marked_number)
 
     def wins(self):
-        for index in range(self.size):
-            if self.full_match(self.row(index)) or self.full_match(self.col(index)):
-                return True
-        return False
+        return any(self.full_match(line) for line in self.rows() + self.cols())
 
     def full_match(self, line):
         return self.size == sum(1 if number == 'X' else 0 for number in line)
@@ -74,8 +71,14 @@ class Board(object):
     def row(self, index):
         return self.numbers[slice(index * self.size, (index + 1) * self.size)]
 
+    def rows(self):
+        return [self.row(index) for index in range(self.size)]
+
     def col(self, index):
         return self.numbers[slice(index, None, self.size)]
+
+    def cols(self):
+        return [self.col(index) for index in range(self.size)]
 
     def unmarkedSum(self):
         sum = 0
