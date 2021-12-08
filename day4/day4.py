@@ -63,21 +63,13 @@ class Board(object):
             self.mark(marked_number)
 
     def wins(self):
-        # Wenn 5 in einer Reihe sind…
-        for row_index in range(self.size):
-            marked_number_count = 0
-            for number in self.row(row_index):
-                marked_number_count += 1 if number == 'X' else 0
-            if marked_number_count == self.size:
-                return True
-        # Wenn 5 in einer Spalte sind…
-        for col_index in range(self.size):
-            marked_number_count = 0
-            for number in self.col(col_index):
-                marked_number_count += 1 if number == 'X' else 0
-            if marked_number_count == self.size:
+        for index in range(self.size):
+            if self.full_match(self.row(index)) or self.full_match(self.col(index)):
                 return True
         return False
+
+    def full_match(self, line):
+        return self.size == sum(1 if number == 'X' else 0 for number in line)
 
     def row(self, index):
         return self.numbers[slice(index * self.size, (index + 1) * self.size)]
