@@ -3,7 +3,6 @@ import unittest
 
 
 class BingoSubsystem(object):
-    last_called_number: int
 
     def __init__(self, init):
         for line in iter(init.readline, '\n'):
@@ -17,27 +16,21 @@ class BingoSubsystem(object):
             board += line
         return '' if board == "" else Board(board)
 
-    def first_winning_board(self):
-        for drawn_number in self.random_numbers:
-            for board in self.boards:
-                board.mark(drawn_number)
+    def first_winning_board(self, selected_boards = None):
+        for called_number in self.random_numbers:
+            for board in (self.boards if selected_boards is None else selected_boards):
+                board.mark(called_number)
                 if board.wins():
-                    self.last_called_number = int(drawn_number)
                     return board
 
     def last_winning_board(self):
-        boards = [x for x in self.boards]
+        boards = self.boards
         while len(boards) > 1:
             called_number = self.call_next_number()
             for board in boards:
                 board.mark(called_number)
             boards = list(filter(lambda b: not b.wins(), boards))
-        last_winning_board = boards.pop()
-        while not last_winning_board.wins():
-            called_number = self.call_next_number()
-            last_winning_board.mark(called_number)
-        self.last_called_number = int(called_number)
-        return last_winning_board
+        return self.first_winning_board(boards)
 
     def call_next_number(self):
         return self.random_numbers.pop(0)
@@ -87,7 +80,7 @@ class Board(object):
 class Day4Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.board = Board("""   22 13 17 11  0
+        self.board = Board("""  22 13 17 11  0
                                  8  2 23  4 24
                                 21  9 14 16  7
                                  6 10  3 18  5
@@ -149,10 +142,6 @@ class Day4Test(unittest.TestCase):
                                 22  X 13  6  X
                                  X  X 12  3  X""".split(), b.numbers)
 
-    def test_last_called_number(self):
-        b = self.bingoSubsystem.first_winning_board()
-        self.assertEqual(24, self.bingoSubsystem.last_called_number)
-
     def test_sum_of_unmarked(self):
         b = self.bingoSubsystem.first_winning_board()
         self.assertEqual(188, b.unmarked_sum())
@@ -179,8 +168,8 @@ if __name__ == '__main__':
     with open('bingo') as fp:
         bingoSubsystem = BingoSubsystem(fp)
         first_winning_board = bingoSubsystem.first_winning_board()
-        last_winning_board = bingoSubsystem.last_winning_board()
         print(f"The score of the winning board is {first_winning_board.score()}")
+        last_winning_board = bingoSubsystem.last_winning_board()
         print(first_winning_board)
         print(f"The score of the last winning board is {last_winning_board.score()}")
         print(last_winning_board)
