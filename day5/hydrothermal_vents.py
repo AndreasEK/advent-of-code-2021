@@ -7,6 +7,8 @@ Y = 1
 def orthogonal_to(axis):
     return 1 - axis
 
+def interpol(start, end, p, number_of_points):
+    return int(start + (end - start) * p / number_of_points)
 
 class VentWarningSystem:
     def __init__(self):
@@ -68,10 +70,11 @@ class Vent(object):
         elif self.is_vertical():
             return iter([tuple([self.from_[X], y]) for y in range(self.min(Y), self.max(Y) + 1)])
         elif self.is_diagonal():
-            number_of_points = self.max(X) - self.min(X) + 1
-            return iter([tuple([int(self.from_[X] + p / (number_of_points - 1) * (self.to_[X] - self.from_[X])),
-                                int(self.from_[Y] + p / (number_of_points - 1) * (self.to_[Y] - self.from_[Y]))]) for p
+            number_of_points = 1 + self.max(X) - self.min(X)
+            return iter([tuple([interpol(self.from_[X], self.to_[X], p, number_of_points-1),
+                                interpol(self.from_[Y], self.to_[Y], p, number_of_points-1)]) for p
                          in range(number_of_points)])
+
 
     def intersection_points(self, v2):
         return set(self.points()).intersection(set(v2.points()))
@@ -317,6 +320,13 @@ class HydrothermalVentsTest(unittest.TestCase):
     def test_points_diagonal_up_left(self):
         v1 = Vent('5,5 -> 2,2')
         self.assertSetEqual({(5, 5), (4, 4), (3, 3), (2, 2)}, set(v1.points()))
+
+    def test_points_large_diagonal(self):
+        vent = Vent('0,0 -> 999,999')
+        points = set(vent.points())
+        self.assertEqual(1000, len(points))
+        self.assertSetEqual(set(map(lambda x: (x,x), range(1000))), points)
+
 
     def test_count_intersections_part2(self):
         self.assertEqual(12, self.vent_warning_system_part2.count_dangerous_areas())
